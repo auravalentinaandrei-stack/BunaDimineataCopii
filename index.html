@@ -6,6 +6,20 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<!-- ✅ ADAUGAT: incarcare automata din date.json -->
+<script>
+async function incarcaDateDinFisier() {
+  try {
+    const r = await fetch("./date.json", { cache: "no-store" });
+    if (!r.ok) throw new Error("Nu exista date.json");
+    return await r.json();
+  } catch (e) {
+    console.log("Nu pot incarca date.json:", e.message);
+    return null;
+  }
+}
+</script>
+
 <style>
 body{
  font-family: Comic Sans MS, Arial;
@@ -46,6 +60,19 @@ h1{text-align:center}
 .toamna{background:#fdebd0;border-color:#e67e22}
 .iarna{background:#d6eaf8;border-color:#3498db}
 .seasonName{font-size:20px;font-weight:bold;margin-top:6px}
+
+/* ✅ ADAUGAT: emoji anotimpuri */
+.emojiSeason{
+  font-size:64px;
+  line-height:90px;
+  height:90px;
+  border-radius:12px;
+  background:#eee;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
+}
 
 /* VREME */
 .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:15px}
@@ -188,14 +215,14 @@ document.querySelectorAll(".zone").forEach(z=>{
 });
 
 /* DATA */
-for(let i=1;i<=31;i++)listaZile.innerHTML+=`<div class="drag zi" draggable="true">${i}</div>`;
+for(let i=1;i<=31;i++)listaZile.innerHTML+=<div class="drag zi" draggable="true">${i}</div>;
 [
  ["Ianuarie","iarna"],["Februarie","iarna"],["Martie","primavara"],
  ["Aprilie","primavara"],["Mai","primavara"],["Iunie","vara"],
  ["Iulie","vara"],["August","vara"],["Septembrie","toamna"],
  ["Octombrie","toamna"],["Noiembrie","toamna"],["Decembrie","iarna"]
-].forEach(l=>listaLuni.innerHTML+=`<div class="drag ${l[1]}" draggable="true">${l[0]}</div>`);
-for(let a=2024;a<=2035;a++)listaAni.innerHTML+=`<div class="drag an" draggable="true">${a}</div>`;
+].forEach(l=>listaLuni.innerHTML+=<div class="drag ${l[1]}" draggable="true">${l[0]}</div>);
+for(let a=2024;a<=2035;a++)listaAni.innerHTML+=<div class="drag an" draggable="true">${a}</div>;
 
 /* COPII */
 let copii=JSON.parse(localStorage.getItem("copii"))||[];
@@ -219,7 +246,7 @@ function drawKids(){
    <button class="btnPrezent" onclick="setPrez(${i},1)">PREZENT</button>
    <button class="btnAbsent" onclick="setPrez(${i},0)">ABSENT</button>
    <div class="emotii">
-    ${["🙂","😢","😡","😴","😍","😌"].map(e=>`<button class="${c.emotie==e?"sel":""}" onclick="setEmo(${i},'${e}')">${e}</button>`).join("")}
+    ${["🙂","😢","😡","😴","😍","😌"].map(e=><button class="${c.emotie==e?"sel":""}" onclick="setEmo(${i},'${e}')">${e}</button>).join("")}
    </div>
    <button class="btnSterge" onclick="stergeCopil(${i})">STERGE</button>
   </div>`;
@@ -234,13 +261,21 @@ drawKids();
 let anotimp=localStorage.getItem("anotimp")||"";
 let anot=JSON.parse(localStorage.getItem("anotimpuri"))||{Primavara:"",Vara:"",Toamna:"",Iarna:""};
 function saveAn(){localStorage.setItem("anotimpuri",JSON.stringify(anot))}
+
+/* ✅ ADAUGAT: emoji anotimpuri */
+const emojiAnot = {
+  Primavara: "🌸🐝",
+  Vara: "☀️🍉",
+  Toamna: "🍁🍂",
+  Iarna: "❄️⛄"
+};
+
 function drawAn(){
  anotimpuri.innerHTML="";
  for(let k in anot){
   anotimpuri.innerHTML+=`
   <div class="card ${k.toLowerCase()} ${anotimp===k?"selectat":""}" onclick="selAn('${k}')">
-   <input type="file" onclick="event.stopPropagation()" onchange="loadAn('${k}',this)">
-   <img src="${anot[k]}">
+   <div class="emojiSeason">${emojiAnot[k] || "🐝"}</div>
    <div class="seasonName">${k.toUpperCase()}</div>
   </div>`;
  }
@@ -286,7 +321,7 @@ function emoText(e){
 }
 function genRaport(){
  let r="";
- copii.forEach(c=>{r+=`${c.nume} - ${c.prezent?"prezent":"absent"} - ${emoText(c.emotie)}<br>`});
+ copii.forEach(c=>{r+=${c.nume} - ${c.prezent?"prezent":"absent"} - ${emoText(c.emotie)}<br>});
  raport.innerHTML=
  "Ziua: "+azi.innerText+"<br>"+
  "Data: "+ziua.innerText+" "+luna.innerText+" "+anul.innerText+"<br>"+
@@ -301,7 +336,7 @@ function genPDF(){
  d.text("Data: "+ziua.innerText+" "+luna.innerText+" "+anul.innerText,10,y);y+=7;
  d.text("Vreme: "+vreme,10,y);y+=7;
  d.text("Anotimp: "+anotimp,10,y);y+=10;
- copii.forEach(c=>{d.text(`${c.nume} - ${c.prezent?"prezent":"absent"} - ${emoText(c.emotie)}`,10,y);y+=7});
+ copii.forEach(c=>{d.text(${c.nume} - ${c.prezent?"prezent":"absent"} - ${emoText(c.emotie)},10,y);y+=7});
  d.save("raport_dimineata.pdf");
 }
 
@@ -344,6 +379,12 @@ document.getElementById("importFile").addEventListener("change",function(){
  r.onload=e=>aplicaTot(JSON.parse(e.target.result));
  r.readAsText(f);
 });
+
+/* ✅ ADAUGAT: incarcare automata din date.json (fara Import manual) */
+window.addEventListener("DOMContentLoaded", async () => {
+  const data = await incarcaDateDinFisier();
+  if (data) aplicaTot(data);
+});
 </script>
 
 <script>
@@ -385,12 +426,5 @@ function resetZiNoua(){
 }
 </script>
 
-
 </body>
 </html>
-
-
-
-
-
-
